@@ -1,17 +1,28 @@
 package scanagent
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
 
+	"github.com/lucabrasi83/vscan-agent/logging"
 	agentpb "github.com/lucabrasi83/vscan-agent/proto"
-	"github.com/lucabrasi83/vulscano/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // default GRPC Listening Port if not specified in environment variable
 var grpcListenPort = "50051"
+
+const (
+	certFile   = "./certs/vscan-agent.pem"
+	keyFile    = "./certs/vscan-agent.key"
+	caCertFile = "./certs/TCL-ENT-CA.pem"
+)
 
 func StartServer() {
 
@@ -25,7 +36,13 @@ func StartServer() {
 		logging.VulscanoLog("fatal", "unable to open TCP socket: ", err)
 	}
 
-	s := grpc.NewServer()
+	tlsCredentials, err := serverCertLoad()
+
+	if err != nil {
+		logging.VulscanoLog("fatal", "unable to load TLS certificates: ", err)
+	}
+
+	s := grpc.NewServer(grpc.Creds(tlsCredentials))
 
 	agentpb.RegisterVscanAgentServiceServer(s, &AgentServer{})
 
@@ -50,4 +67,34 @@ func StartServer() {
 	// Stop GRPC server and TCP listener
 	s.GracefulStop()
 	lis.Close()
+}
+
+func serverCertLoad() (credentials.TransportCredentials, error) {
+
+	// Load the certificates from disk
+	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)
+
+	if err != nil {
+		return nil, fmt.Errorf("error while loading VSCAN Agent server certificate: %v\n", err)
+	}
+
+	// Create a certificate pool from the certificate authority
+	certPool := x509.NewCertPool()
+
+	ca, err := ioutil.ReadFile(caCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("error while loading VSCAN Agent root Certificate Authority: %v\n", err)
+	}
+
+	// Append the client certificates from the CA
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		return nil, fmt.Errorf("failed to append Root CA %v certs\n", ca)
+	}
+
+	return credentials.NewTLS(&tls.Config{
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		Certificates: []tls.Certificate{certificate},
+		ClientCAs:    certPool,
+	}), nil
+
 }

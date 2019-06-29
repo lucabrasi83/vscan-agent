@@ -9,35 +9,46 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/lucabrasi83/vscan-agent/inibuilder"
+	"github.com/lucabrasi83/vscan-agent/logging"
 	agentpb "github.com/lucabrasi83/vscan-agent/proto"
-	"github.com/lucabrasi83/vulscano/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type AgentServer struct{}
 
-func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.VscanAgentService_BuildScanConfigServer) error {
+var (
+	hostname string
+	errHost  error
+)
 
-	logging.VulscanoLog("info", "received scan request ", req.String())
+func init() {
 
-	hostname, errHost := os.Hostname()
+	hostname, errHost = os.Hostname()
 
 	if errHost != nil {
-		return status.Errorf(
-			codes.Internal,
-			fmt.Sprintln("failed to get VSCAN agent hostname"),
-		)
+		logging.VulscanoLog("fatal", fmt.Sprintf("failed to get local VSCAN agent hostname: %v\n", errHost))
 	}
 
+}
+func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.VscanAgentService_BuildScanConfigServer) error {
+
+	logging.VulscanoLog("info",
+		fmt.Sprintf("Received scan request: Job ID %v - Target Device(s): %v - Requested Timeout (sec): %d\n",
+			req.GetJobId(), req.GetDevices(), req.GetScanTimeoutSeconds()),
+	)
+
 	jobID := req.GetJobId()
+
+	scanTimeout := req.GetScanTimeoutSeconds()
 
 	if jobID == "" {
 		return status.Errorf(
 			codes.InvalidArgument,
-			fmt.Sprintln("job ID is missing from argument"),
+			fmt.Sprintf("Agent %v - job ID is missing from argument\n", hostname),
 		)
 	}
 
@@ -52,16 +63,16 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 	if err != nil {
 		return status.Errorf(
 			codes.InvalidArgument,
-			fmt.Sprintf("unable to generate scan config with given arguments. error: %v\n", err),
+			fmt.Sprintf("Agent %v - unable to generate scan config with given arguments. error: %v\n", hostname, err),
 		)
 	}
 
-	err = execScan(jobID)
+	err = execScan(jobID, scanTimeout)
 
 	if err != nil {
 		return status.Errorf(
 			codes.InvalidArgument,
-			fmt.Sprintf("unable to execute scan. error: %v\n", err),
+			fmt.Sprintf("Agent %v - unable to execute scan. error: %v\n", hostname, err),
 		)
 	}
 
@@ -79,14 +90,14 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 
 				return status.Errorf(
 					codes.Internal,
-					fmt.Sprintf("failed to send Joval JSON report stream: %v\n ", errFileWalk),
+					fmt.Sprintf("Agent %v - failed to send Joval JSON report stream: %v\n ", hostname, errFileWalk),
 				)
 			}
 			if !info.IsDir() {
 				reportFile, err := ioutil.ReadFile(path)
 
 				if err != nil {
-					return fmt.Errorf("error while reading report file %v: %v", path, err)
+					return fmt.Errorf("Agent %v - error while reading report file %v: %v\n", hostname, path, err)
 				}
 
 				errStream := stream.Send(
@@ -101,7 +112,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 				if errStream != nil {
 					return status.Errorf(
 						codes.Internal,
-						fmt.Sprintf("failed to send Joval JSON report stream: %v\n ", errStream),
+						fmt.Sprintf("Agent %v - failed to send Joval JSON report stream: %v\n ", hostname, errStream),
 					)
 				}
 			}
@@ -111,7 +122,8 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 		if err != nil {
 			return status.Errorf(
 				codes.Internal,
-				fmt.Sprintf("error while looking for Joval reports directory for job ID %v\n ", jobID),
+				fmt.Sprintf("Agent %v - error while looking for Joval reports directory for job ID %v\n ",
+					hostname, jobID),
 			)
 		}
 
@@ -120,12 +132,18 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 
 	return status.Errorf(
 		codes.Internal,
-		fmt.Sprintf("error while executing scan for job ID %v . Directory %v not found\n ", jobID, reportDir),
+		fmt.Sprintf("Agent %v - error while executing scan for job ID %v . Directory %v not found\n ", hostname, jobID,
+			reportDir),
 	)
 }
 
-func execScan(job string) error {
-	cmd := exec.CommandContext(context.Background(), "java",
+func execScan(job string, t int64) error {
+
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(t)*time.Second)
+
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxTimeout, "java",
 		"-Dlicense.file=joval/tatacommunications.com.sig.xml",
 		"-jar", "joval/Joval-Utilities.jar", "scan", "-c", "scanjobs/"+job+"/config.ini",
 	)
@@ -157,80 +175,11 @@ func execScan(job string) error {
 
 	if err != nil {
 
-		logging.VulscanoLog("error", "error while executing scan: ", err)
+		logging.VulscanoLog("error", fmt.Sprintf("Job ID %v - error while launching Joval utility: %v\n", job, err))
 
-		return fmt.Errorf("error while executing scan %v\n", err)
+		return fmt.Errorf("unable to launch Joval scan %v\n", err)
 
 	}
 
 	return nil
 }
-
-//func (*AgentServer) BuildScanConfig(ctx context.Context, req *agentpb.ScanRequest) (*agentpb.ScanResultsResponse,
-//	error) {
-//
-//	jobID := req.GetJobId()
-//
-//	if jobID == "" {
-//		return nil, status.Errorf(
-//			codes.InvalidArgument,
-//			fmt.Sprintln("job ID is missing from argument"),
-//		)
-//	}
-//
-//	err := inibuilder.BuildIni(
-//		req.GetJobId(),
-//		req.GetDevices(),
-//		req.GetOvalSourceUrl(),
-//		req.SshGateway,
-//		req.UserDeviceCredentials,
-//	)
-//
-//	if err != nil {
-//		return nil, status.Errorf(
-//			codes.InvalidArgument,
-//			fmt.Sprintf("unable to generate scan config with given arguments. error: %v\n", err),
-//		)
-//	}
-//
-//	cmd := exec.CommandContext(context.Background(), "java",
-//		"-Dlicense.file=joval/tatacommunications.com.sig.xml",
-//		"-jar", "joval/Joval-Utilities.jar", "scan", "-c", "scanjobs/"+req.GetJobId()+"/config.ini",
-//	)
-//
-//	var stderr bytes.Buffer
-//	cmd.Stderr = &stderr
-//
-//	logFile, err := os.OpenFile("./scanjobs/"+req.GetJobId()+"/logs/joval_stdout.log",
-//		os.O_CREATE|os.O_WRONLY,
-//		0755)
-//
-//	defer logFile.Close()
-//
-//	// Copy Joval scan output to logFile once command call exits
-//	defer func() {
-//		_, errLogFile := io.Copy(logFile, &stderr)
-//
-//		if errLogFile != nil {
-//			logging.VulscanoLog("error",
-//				"failed to write log file for job ID ", req.GetJobId()+"error: ", errLogFile)
-//		}
-//	}()
-//
-//	err = cmd.Run()
-//
-//	if err != nil {
-//
-//		logging.VulscanoLog("error", "error while executing scan: ", err)
-//
-//		return nil, status.Errorf(
-//			codes.InvalidArgument,
-//			fmt.Sprintf("error while executing scan %v\n", err),
-//		)
-//	}
-//
-//	return &agentpb.IniConfBuildResponse{
-//		Ack: "OK",
-//	}, nil
-//
-//}

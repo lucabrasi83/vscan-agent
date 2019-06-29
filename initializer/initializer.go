@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/lucabrasi83/vulscano/logging"
+	"github.com/lucabrasi83/vscan-agent/logging"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
