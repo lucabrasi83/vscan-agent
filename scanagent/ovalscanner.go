@@ -90,14 +90,14 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 
 				return status.Errorf(
 					codes.Internal,
-					fmt.Sprintf("Agent %v - failed to send Joval JSON report stream: %v\n ", hostname, errFileWalk),
+					fmt.Sprintf("agent %v - failed to send Joval JSON report stream: %v", hostname, errFileWalk),
 				)
 			}
 			if !info.IsDir() {
 				reportFile, err := ioutil.ReadFile(path)
 
 				if err != nil {
-					return fmt.Errorf("Agent %v - error while reading report file %v: %v\n", hostname, path, err)
+					return fmt.Errorf("agent %v - error while reading report file %v: %v", hostname, path, err)
 				}
 
 				errStream := stream.Send(
@@ -112,7 +112,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 				if errStream != nil {
 					return status.Errorf(
 						codes.Internal,
-						fmt.Sprintf("Agent %v - failed to send Joval JSON report stream: %v\n ", hostname, errStream),
+						fmt.Sprintf("agent %v - failed to send Joval JSON report stream: %v", hostname, errStream),
 					)
 				}
 			}
@@ -122,7 +122,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 		if err != nil {
 			return status.Errorf(
 				codes.Internal,
-				fmt.Sprintf("Agent %v - error while looking for Joval reports directory for job ID %v\n ",
+				fmt.Sprintf("agent %v - error while looking for Joval reports directory for job ID %v",
 					hostname, jobID),
 			)
 		}
@@ -132,7 +132,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 
 	return status.Errorf(
 		codes.Internal,
-		fmt.Sprintf("Agent %v - error while executing scan for job ID %v . Directory %v not found\n ", hostname, jobID,
+		fmt.Sprintf("agent %v - error while executing scan for job ID %v . Directory %v not found", hostname, jobID,
 			reportDir),
 	)
 }
@@ -175,9 +175,9 @@ func execScan(job string, t int64) error {
 
 	if err != nil {
 
-		logging.VulscanoLog("error", fmt.Sprintf("Job ID %v - error while launching Joval utility: %v\n", job, err))
+		logging.VulscanoLog("error", fmt.Sprintf("job ID %v - error while launching Joval utility: %v", job, err))
 
-		return fmt.Errorf("unable to launch Joval scan %v\n", err)
+		return fmt.Errorf("unable to launch Joval scan %v", err)
 
 	}
 

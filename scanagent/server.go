@@ -46,7 +46,7 @@ func StartServer() {
 
 	agentpb.RegisterVscanAgentServiceServer(s, &AgentServer{})
 
-	logging.VulscanoLog("info", "starting VSCAN Agent on port 50051...")
+	logging.VulscanoLog("info", fmt.Sprintf("starting VSCAN Agent on port %v...\n", grpcListenPort))
 
 	// Channel to handle graceful shutdown of GRPC Server
 	ch := make(chan os.Signal, 1)
@@ -75,7 +75,7 @@ func serverCertLoad() (credentials.TransportCredentials, error) {
 	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)
 
 	if err != nil {
-		return nil, fmt.Errorf("error while loading VSCAN Agent server certificate: %v\n", err)
+		return nil, fmt.Errorf("error while loading VSCAN agent server certificate: %v", err)
 	}
 
 	// Create a certificate pool from the certificate authority
@@ -83,12 +83,12 @@ func serverCertLoad() (credentials.TransportCredentials, error) {
 
 	ca, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		return nil, fmt.Errorf("error while loading VSCAN Agent root Certificate Authority: %v\n", err)
+		return nil, fmt.Errorf("error while loading VSCAN agent root Certificate Authority: %v", err)
 	}
 
 	// Append the client certificates from the CA
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		return nil, fmt.Errorf("failed to append Root CA %v certs\n", ca)
+		return nil, fmt.Errorf("failed to append Root CA %v certs", ca)
 	}
 
 	return credentials.NewTLS(&tls.Config{
