@@ -9,7 +9,9 @@ import (
 	"os"
 	"os/signal"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/lucabrasi83/vscan-agent/logging"
+	"github.com/lucabrasi83/vscan-agent/middleware"
 	agentpb "github.com/lucabrasi83/vscan-agent/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -42,7 +44,17 @@ func StartServer() {
 		logging.VulscanoLog("fatal", "unable to load TLS certificates: ", err)
 	}
 
-	s := grpc.NewServer(grpc.Creds(tlsCredentials))
+	limiter := middleware.AlwaysPassLimiter{}
+
+	s := grpc.NewServer(
+		grpc.Creds(tlsCredentials),
+		grpc_middleware.WithUnaryServerChain(
+			middleware.UnaryServerInterceptor(&limiter),
+		),
+		grpc_middleware.WithStreamServerChain(
+			middleware.StreamServerInterceptor(&limiter),
+		),
+	)
 
 	agentpb.RegisterVscanAgentServiceServer(s, &AgentServer{})
 

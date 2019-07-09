@@ -9,6 +9,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.7 // indirect
