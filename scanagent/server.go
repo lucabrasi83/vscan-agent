@@ -35,13 +35,13 @@ func StartServer() {
 	lis, err := net.Listen("tcp", ":"+grpcListenPort)
 
 	if err != nil {
-		logging.VulscanoLog("fatal", "unable to open TCP socket: ", err)
+		logging.VulscanoLog("fatal", "unable to open TCP socket: %v", err)
 	}
 
 	tlsCredentials, err := serverCertLoad()
 
 	if err != nil {
-		logging.VulscanoLog("fatal", "unable to load TLS certificates: ", err)
+		logging.VulscanoLog("fatal", "unable to load TLS certificates: %v", err)
 	}
 
 	limiter := middleware.AlwaysPassLimiter{}
@@ -58,7 +58,7 @@ func StartServer() {
 
 	agentpb.RegisterVscanAgentServiceServer(s, &AgentServer{})
 
-	logging.VulscanoLog("info", fmt.Sprintf("starting VSCAN Agent on port %v...\n", grpcListenPort))
+	logging.VulscanoLog("info", "starting VSCAN Agent on port %v...\n", grpcListenPort)
 
 	// Channel to handle graceful shutdown of GRPC Server
 	ch := make(chan os.Signal, 1)
@@ -68,7 +68,7 @@ func StartServer() {
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
-			logging.VulscanoLog("fatal", "unable to start GRPC server: ", err)
+			logging.VulscanoLog("fatal", "unable to start GRPC server: %v", err)
 		}
 	}()
 

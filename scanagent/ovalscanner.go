@@ -37,8 +37,8 @@ func init() {
 func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.VscanAgentService_BuildScanConfigServer) error {
 
 	logging.VulscanoLog("info",
-		fmt.Sprintf("Received scan request: Job ID %v - Target Device(s): %v - Requested Timeout (sec): %d\n",
-			req.GetJobId(), req.GetDevices(), req.GetScanTimeoutSeconds()),
+		"Received scan request: Job ID %v - Target Device(s): %v - Requested Timeout (sec): %d\n",
+		req.GetJobId(), req.GetDevices(), req.GetScanTimeoutSeconds(),
 	)
 
 	jobID := req.GetJobId()
@@ -85,7 +85,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 			if errFileWalk != nil {
 
 				logging.VulscanoLog("error",
-					"unable to access Joval reports directory: ", path, "error: ", errFileWalk,
+					"unable to access Joval reports directory: %v with error %v", path, errFileWalk,
 				)
 
 				return status.Errorf(
@@ -156,7 +156,7 @@ func execScan(job string, t int64) error {
 
 	if err != nil {
 		logging.VulscanoLog("error",
-			"failed to create Joval log file for job ID ", job+" error: ", err)
+			"failed to create Joval log file for job ID %v with error %v", job, err)
 	}
 
 	defer logFile.Close()
@@ -167,7 +167,7 @@ func execScan(job string, t int64) error {
 
 		if errLogFile != nil {
 			logging.VulscanoLog("error",
-				"failed to write log file for job ID ", job+" error: ", errLogFile)
+				"failed to write log file for job ID %v with error %v", job, errLogFile)
 		}
 	}()
 
@@ -175,7 +175,7 @@ func execScan(job string, t int64) error {
 
 	if err != nil {
 
-		logging.VulscanoLog("error", fmt.Sprintf("job ID %v - error while launching Joval utility: %v", job, err))
+		logging.VulscanoLog("error", "Job ID %v - error while launching Joval utility: %v", job, err)
 
 		return fmt.Errorf("unable to launch Joval scan %v", err)
 

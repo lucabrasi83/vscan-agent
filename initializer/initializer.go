@@ -34,13 +34,13 @@ func printBanner() {
 	fmt.Printf("\n")
 	banner, err := os.Open("banner.txt")
 	if err != nil {
-		logging.VulscanoLog("error", "Not able to load banner: ", err.Error())
+		logging.VulscanoLog("error", "Not able to load banner: %v", err.Error())
 	}
 	defer banner.Close()
 
 	_, err = io.Copy(os.Stdout, banner)
 	if err != nil {
-		logging.VulscanoLog("error", "Not able to load banner: ", err.Error())
+		logging.VulscanoLog("error", "Not able to load banner: %v", err.Error())
 	}
 	fmt.Printf("\n\n")
 }
@@ -65,7 +65,7 @@ func printPlatformDetails() {
 	platform, err := host.Info()
 
 	if err != nil {
-		logging.VulscanoLog("error", "Unable to fetch platform details:", err.Error())
+		logging.VulscanoLog("error", "Unable to fetch platform details %v", err.Error())
 	} else {
 		fmt.Println(
 			logging.UnderlineText("Hostname:"),
@@ -79,7 +79,7 @@ func printPlatformDetails() {
 
 	cpuDetails, err := cpu.Info()
 	if err != nil {
-		logging.VulscanoLog("error", "Unable to fetch CPU details:", err.Error())
+		logging.VulscanoLog("error", "Unable to fetch CPU details: %v", err.Error())
 	} else {
 		fmt.Println(logging.UnderlineText("CPU Model:"), logging.InfoMessage(cpuDetails[0].ModelName))
 		fmt.Println(logging.UnderlineText("CPU Core(s):"), logging.InfoMessage(runtime.NumCPU()))
@@ -89,7 +89,7 @@ func printPlatformDetails() {
 	diskUsage, err := disk.Usage("/")
 
 	if err != nil {
-		logging.VulscanoLog("error", "Unable to fetch disk Usage details:", err.Error())
+		logging.VulscanoLog("error", "Unable to fetch disk Usage details: %v", err.Error())
 	} else {
 		diskUsageRounded := strconv.Itoa(int(math.Round(diskUsage.UsedPercent)))
 
@@ -100,7 +100,7 @@ func printPlatformDetails() {
 	memUsage, err := mem.VirtualMemory()
 
 	if err != nil {
-		logging.VulscanoLog("error", "Unable to fetch Memory details:", err.Error())
+		logging.VulscanoLog("error", "Unable to fetch Memory details: %v", err.Error())
 	} else {
 		memUsageRounded := strconv.Itoa(int(math.Round(memUsage.UsedPercent)))
 		fmt.Println(

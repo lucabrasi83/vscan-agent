@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"runtime"
 	"strconv"
@@ -28,7 +27,7 @@ func init() {
 	hostname, errHost = os.Hostname()
 
 	if errHost != nil {
-		logging.VulscanoLog("fatal", fmt.Sprintf("failed to get local VSCAN agent hostname: %v\n", errHost))
+		logging.VulscanoLog("fatal", "failed to get local VSCAN agent hostname: %v\n", errHost)
 	}
 
 }
@@ -82,8 +81,8 @@ func (*AlwaysPassLimiter) Limit() bool {
 
 	if maxLoad >= maxLoadLimit {
 		logging.VulscanoLog("error",
-			fmt.Sprintf("Request rejected due to high system load. Current 5 minutes Average System Load at %v\n",
-				strconv.FormatFloat(currentLoad, 'f', 2, 64)),
+			"Request rejected due to high system load. Current 5 minutes Average System Load at %v\n",
+			strconv.FormatFloat(currentLoad, 'f', 2, 64),
 		)
 
 		return true

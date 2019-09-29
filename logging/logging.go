@@ -2,7 +2,11 @@
 package logging
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -59,7 +63,26 @@ func logToStdOut(level string, fields ...interface{}) {
 	}
 
 }
-func VulscanoLog(level string, fields ...interface{}) {
+func VulscanoLog(level string, fields string, args ...interface{}) {
 
-	logToStdOut(level, fields...)
+	// Use String Builder for more efficient strings concat
+	s := strings.Builder{}
+
+	_, f, l, ok := runtime.Caller(1)
+
+	if ok {
+		_, file := filepath.Split(f)
+
+		line := l
+		_, _ = fmt.Fprintf(&s, "caller=%v - line=%d - msg=", file, line)
+
+	}
+
+	_, err := fmt.Fprintf(&s, fields, args...)
+
+	if err != nil {
+		logToStdOut("error", fmt.Sprintf("Failed to write logging string in strings.Builder buffer %v", err))
+	}
+
+	logToStdOut(level, s.String())
 }
