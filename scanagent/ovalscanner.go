@@ -1,6 +1,7 @@
 package scanagent
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/lucabrasi83/vscan-agent/inibuilder"
@@ -25,18 +27,22 @@ var (
 	errHost  error
 )
 
+const (
+	jovalStdOutLogFile = "joval_stdout.log"
+)
+
 func init() {
 
 	hostname, errHost = os.Hostname()
 
 	if errHost != nil {
-		logging.VulscanoLog("fatal", fmt.Sprintf("failed to get local VSCAN agent hostname: %v\n", errHost))
+		logging.VSCANLog("fatal", "failed to get local VSCAN agent hostname: %v", errHost)
 	}
 
 }
 func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.VscanAgentService_BuildScanConfigServer) error {
 
-	logging.VulscanoLog("info",
+	logging.VSCANLog("info",
 		"Received scan request: Job ID %v - Target Device(s): %v - Requested Timeout (sec): %d\n",
 		req.GetJobId(), req.GetDevices(), req.GetScanTimeoutSeconds(),
 	)
@@ -67,7 +73,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 		)
 	}
 
-	err = execScan(jobID, scanTimeout)
+	scanLogs, err := execScan(jobID, scanTimeout, stream)
 
 	if err != nil {
 		return status.Errorf(
@@ -84,7 +90,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 
 			if errFileWalk != nil {
 
-				logging.VulscanoLog("error",
+				logging.VSCANLog("error",
 					"unable to access Joval reports directory: %v with error %v", path, errFileWalk,
 				)
 
@@ -106,6 +112,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 						ScanResultsJson: reportFile,
 						VscanAgentName:  hostname,
 						DeviceName:      info.Name(),
+						ScanLogsPersist: scanLogs,
 					},
 				)
 
@@ -137,7 +144,8 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 	)
 }
 
-func execScan(job string, t int64) error {
+func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanConfigServer) (*agentpb.
+	ScanLogFileResponsePS, error) {
 
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(t)*time.Second)
 
@@ -148,38 +156,73 @@ func execScan(job string, t int64) error {
 		"-jar", "joval/Joval-Utilities.jar", "scan", "-c", "scanjobs/"+job+"/config.ini",
 	)
 
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	// Build File Path using join for efficiency
+	filePath := strings.Join([]string{".", "scanjobs", job, jovalStdOutLogFile}, "/")
 
-	logFile, err := os.OpenFile("./scanjobs/"+job+"/joval_stdout.log",
-		os.O_CREATE|os.O_WRONLY, 0755)
+	logFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0755)
 
 	if err != nil {
-		logging.VulscanoLog("error",
+		logging.VSCANLog("error",
 			"failed to create Joval log file for job ID %v with error %v", job, err)
 	}
 
-	defer logFile.Close()
-
-	// Copy Joval scan output to logFile once command call exits
 	defer func() {
-		_, errLogFile := io.Copy(logFile, &stderr)
 
-		if errLogFile != nil {
-			logging.VulscanoLog("error",
-				"failed to write log file for job ID %v with error %v", job, errLogFile)
+		errFileClose := logFile.Close()
+
+		if errFileClose != nil {
+			logging.VSCANLog("error",
+				"failed to close Joval log file for job ID %v with error %v", job, errFileClose)
 		}
 	}()
 
+	// Copy Joval scan log output to logFile real-time
+	// bufStream will be sent to the gRPC stream as the log lines from Joval are generated
+	bufStream := new(bytes.Buffer)
+
+	// bufPersist will store the entire log and used for persistency in VSCAN DB
+	bufPersist := new(bytes.Buffer)
+
+	// Multiwriter will write the logs in file and buffers
+	stderr := io.MultiWriter(logFile, bufStream, bufPersist)
+
+	// Map the command Standard Error Output to the multiwriter
+	cmd.Stderr = stderr
+
+	// Semaphore channel to signal when the Cmd has finished
+	done := make(chan bool)
+
+	// Go Routine to stream the scan job logs
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				scanner := bufio.NewScanner(bufStream)
+				for scanner.Scan() {
+					time.Sleep(1 * time.Second)
+					_ = stream.Send(&agentpb.ScanResultsResponse{
+						ScanLogsWebsocket: &agentpb.ScanLogFileResponseWB{ScanLogs: scanner.Bytes()},
+					},
+					)
+				}
+
+			}
+		}
+
+	}()
 	err = cmd.Run()
+
+	done <- true
 
 	if err != nil {
 
-		logging.VulscanoLog("error", "Job ID %v - error while launching Joval utility: %v", job, err)
+		logging.VSCANLog("error", "Job ID %v - error while launching Joval utility: %v", job, err)
 
-		return fmt.Errorf("unable to launch Joval scan %v", err)
+		return nil, fmt.Errorf("unable to launch Joval scan %v", err)
 
 	}
 
-	return nil
+	return &agentpb.ScanLogFileResponsePS{ScanLogs: bufPersist.Bytes()}, nil
 }

@@ -19,15 +19,15 @@ var (
 )
 
 // maxLoadLimit represents the threshold at which we abort the Request due to high system load
-// By default value is set at 80% for 5 minutes Average Load
-const maxLoadLimit = 0.8
+// By default value is set at 90% for 5 minutes Average Load
+const maxLoadLimit = 0.9
 
 func init() {
 
 	hostname, errHost = os.Hostname()
 
 	if errHost != nil {
-		logging.VulscanoLog("fatal", "failed to get local VSCAN agent hostname: %v\n", errHost)
+		logging.VSCANLog("fatal", "failed to get local VSCAN agent hostname: %v\n", errHost)
 	}
 
 }
@@ -76,12 +76,12 @@ func (*AlwaysPassLimiter) Limit() bool {
 	// Current 5 minutes System Load Average
 	currentLoad := maxLoadAverages.Load5
 
-	// Maximum Load tolerated below must be below 0.8
+	// Maximum Load tolerated below must be below 0.9
 	maxLoad := currentLoad / float64(numCPU)
 
 	if maxLoad >= maxLoadLimit {
-		logging.VulscanoLog("error",
-			"Request rejected due to high system load. Current 5 minutes Average System Load at %v\n",
+		logging.VSCANLog("error",
+			"Request rejected due to high system load. Current 5 minutes Average System Load at %v",
 			strconv.FormatFloat(currentLoad, 'f', 2, 64),
 		)
 

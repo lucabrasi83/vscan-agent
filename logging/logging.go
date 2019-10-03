@@ -63,7 +63,7 @@ func logToStdOut(level string, fields ...interface{}) {
 	}
 
 }
-func VulscanoLog(level string, fields string, args ...interface{}) {
+func VSCANLog(level string, fields string, args ...interface{}) {
 
 	// Use String Builder for more efficient strings concat
 	s := strings.Builder{}
