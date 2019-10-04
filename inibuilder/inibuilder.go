@@ -84,7 +84,7 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 		},
 		Logs{
 			ExportDir:       filepath.FromSlash("./scanjobs/" + jobID + "/logs"),
-			Level:           "debug",
+			Level:           "off",
 			OutputExtension: ".log",
 		},
 	}
