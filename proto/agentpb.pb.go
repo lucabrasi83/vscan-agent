@@ -40,7 +40,7 @@ func (m *SSHGateway) Reset()         { *m = SSHGateway{} }
 func (m *SSHGateway) String() string { return proto.CompactTextString(m) }
 func (*SSHGateway) ProtoMessage()    {}
 func (*SSHGateway) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{0}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{0}
 }
 func (m *SSHGateway) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -118,7 +118,7 @@ func (m *UserDeviceCredentials) Reset()         { *m = UserDeviceCredentials{} }
 func (m *UserDeviceCredentials) String() string { return proto.CompactTextString(m) }
 func (*UserDeviceCredentials) ProtoMessage()    {}
 func (*UserDeviceCredentials) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{1}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{1}
 }
 func (m *UserDeviceCredentials) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -199,7 +199,7 @@ func (m *Device) Reset()         { *m = Device{} }
 func (m *Device) String() string { return proto.CompactTextString(m) }
 func (*Device) ProtoMessage()    {}
 func (*Device) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{2}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{2}
 }
 func (m *Device) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -262,7 +262,7 @@ func (m *ScanRequest) Reset()         { *m = ScanRequest{} }
 func (m *ScanRequest) String() string { return proto.CompactTextString(m) }
 func (*ScanRequest) ProtoMessage()    {}
 func (*ScanRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{3}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{3}
 }
 func (m *ScanRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -345,7 +345,7 @@ func (m *ScanResultsResponse) Reset()         { *m = ScanResultsResponse{} }
 func (m *ScanResultsResponse) String() string { return proto.CompactTextString(m) }
 func (*ScanResultsResponse) ProtoMessage()    {}
 func (*ScanResultsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{4}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{4}
 }
 func (m *ScanResultsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -418,7 +418,7 @@ func (m *ScanLogFileResponseWB) Reset()         { *m = ScanLogFileResponseWB{} }
 func (m *ScanLogFileResponseWB) String() string { return proto.CompactTextString(m) }
 func (*ScanLogFileResponseWB) ProtoMessage()    {}
 func (*ScanLogFileResponseWB) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{5}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{5}
 }
 func (m *ScanLogFileResponseWB) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -463,7 +463,7 @@ func (m *ScanLogFileResponsePS) Reset()         { *m = ScanLogFileResponsePS{} }
 func (m *ScanLogFileResponsePS) String() string { return proto.CompactTextString(m) }
 func (*ScanLogFileResponsePS) ProtoMessage()    {}
 func (*ScanLogFileResponsePS) Descriptor() ([]byte, []int) {
-	return fileDescriptor_agentpb_a7bd183304898558, []int{6}
+	return fileDescriptor_agentpb_d523527fdcedb973, []int{6}
 }
 func (m *ScanLogFileResponsePS) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2324,9 +2324,9 @@ var (
 	ErrIntOverflowAgentpb   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("proto/agentpb.proto", fileDescriptor_agentpb_a7bd183304898558) }
+func init() { proto.RegisterFile("proto/agentpb.proto", fileDescriptor_agentpb_d523527fdcedb973) }
 
-var fileDescriptor_agentpb_a7bd183304898558 = []byte{
+var fileDescriptor_agentpb_d523527fdcedb973 = []byte{
 	// 688 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0xcd, 0x52, 0xd4, 0x4a,
 	0x18, 0x9d, 0x9f, 0xcb, 0x00, 0xdf, 0x70, 0xef, 0x40, 0x0f, 0x53, 0xcc, 0x45, 0x8d, 0x32, 0x0b,
