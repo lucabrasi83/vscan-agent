@@ -21,9 +21,9 @@ import (
 var grpcListenPort = "50051"
 
 const (
-	certFile   = "./certs/vscan-agent.pem"
-	keyFile    = "./certs/vscan-agent.key"
-	caCertFile = "./certs/TCL-ENT-CA.pem"
+	certFile   = "/opt/certs/vscan-agent.pem"
+	keyFile    = "/opt/certs/vscan-agent.key"
+	caCertFile = "/opt/certs/TCL-ENT-CA.pem"
 )
 
 func StartServer() {

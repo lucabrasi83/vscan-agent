@@ -1,12 +1,15 @@
 package inibuilder
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-ini/ini"
+	"github.com/lucabrasi83/vscan-agent/logging"
 	agentpb "github.com/lucabrasi83/vscan-agent/proto"
 )
 
@@ -35,7 +38,7 @@ type Logs struct {
 // The config.ini file is placed in tmp/<scan-job-id>/ folder by default
 // It returns any error encountered during the config.ini file generation
 func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *agentpb.SSHGateway,
-	creds *agentpb.UserDeviceCredentials) (err error) {
+	creds *agentpb.UserDeviceCredentials) (reader io.Reader, err error) {
 
 	// Starts with baseline ini file
 	cfg, err := ini.Load(
@@ -44,10 +47,10 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 		input.type = xccdf_results
 		output.extension = json 
 		transform.file =` + filepath.FromSlash(
-				"./joval/tools/arf_xccdf_results_to_json_events.xsl")))
+				"./tools/arf_xccdf_results_to_json_events.xsl")))
 
 	if err != nil {
-		return fmt.Errorf("error while loading default ini content for job ID %v: %v", jobID, err)
+		return nil, fmt.Errorf("error while loading default ini content for job ID %v: %v", jobID, err)
 	}
 
 	// Add Device Credentials sections details
@@ -58,7 +61,7 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 		err = buildDeviceCredentialsSections(cfg, creds)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -70,7 +73,7 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 		err = buildSSHGatewaySections(cfg, sshGW)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 	}
@@ -90,12 +93,12 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 	}
 
 	if err = cfg.ReflectFrom(secSkeleton); err != nil {
-		return fmt.Errorf("error while reflecting struct into config.ini: %v", err)
+		return nil, fmt.Errorf("error while reflecting struct into config.ini: %v", err)
 	}
 
 	// Continue INI building in separate function for dynamic parameters
 	if err = dynaIniGen(cfg, jobID, dev, sshGWName, credsName); err != nil {
-		return fmt.Errorf("error while generating dynamic parameters for config.ini: %v", err)
+		return nil, fmt.Errorf("error while generating dynamic parameters for config.ini: %v", err)
 	}
 
 	// Assigns directory name per scan job ID
@@ -104,29 +107,20 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 	// Check whether the directory to be created already exists. If not, we create it with Unix permission 0750
 	if _, errDirNotExist := os.Stat(dir); os.IsNotExist(errDirNotExist) {
 		if errCreateDir := os.MkdirAll(dir, 0750); errCreateDir != nil {
-			return fmt.Errorf("error while creating directory for job ID %v: %v", jobID, errCreateDir)
+			return nil, fmt.Errorf("error while creating directory for job ID %v: %v", jobID, errCreateDir)
 		}
 	}
 
-	iniFile, err := os.Create(filepath.FromSlash("./scanjobs/" + jobID + "/config.ini"))
-	if err != nil {
-		return fmt.Errorf("error while saving config.ini for job ID %v: %v", jobID, err)
+	configBuf := &bytes.Buffer{}
+	_, errBuf := cfg.WriteTo(configBuf)
+	if errBuf != nil {
+		return nil, errBuf
 	}
+	configBuf.WriteString("#EOF")
 
-	// Defer Named return when closing config.ini file to capture any error
-	defer func() {
-		if errIniClose := iniFile.Close(); errIniClose != nil {
-			err = errIniClose
-		}
-	}()
+	logging.VSCANLog("warning", "%v", configBuf.Cap())
 
-	// Save the generated config.ini in scanjobs/JobID/ folder
-	if err := cfg.SaveTo(
-		filepath.FromSlash("./scanjobs/" + jobID + "/config.ini")); err != nil {
-		return fmt.Errorf("error while saving config.ini for job ID %v: %v", jobID, err)
-	}
-
-	return nil
+	return configBuf, nil
 }
 
 func buildSSHGatewaySections(cfg *ini.File, sshGW *agentpb.SSHGateway) error {
@@ -166,6 +160,8 @@ func buildSSHGatewaySections(cfg *ini.File, sshGW *agentpb.SSHGateway) error {
 		if err != nil {
 			return fmt.Errorf("error while setting SSH gateway private key in config.ini: %v ", err)
 		}
+
+		logging.VSCANLog("warning", "%v", pvKeyJovalFormat)
 
 	}
 

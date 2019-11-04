@@ -1,4 +1,4 @@
-FROM golang:1.13.1-alpine as builder
+FROM golang:1.13.4-alpine as builder
 RUN apk add --no-cache build-base git ca-certificates && update-ca-certificates 2>/dev/null || true
 COPY . /go/src/github.com/lucabrasi83/vscan-agent
 WORKDIR /go/src/github.com/lucabrasi83/vscan-agent
@@ -10,12 +10,13 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     -X github.com/lucabrasi83/vscan-agent/initializer.BuiltOn=$(hostname)" -o vscan-agent
 
 
-FROM openjdk:11-jre-slim
+FROM openjdk:13-slim
 LABEL maintainer="sebastien.pouplin@tatacommunications.com"
-USER 1000
-COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/banner.txt /
-COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/vscan-agent /
+COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/banner.txt /opt/banner.txt
+COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/vscan-agent /opt/vscan-agent
 COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/joval /joval
-COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/scanjobs /scanjobs
-COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/certs /certs
-CMD ["./vscan-agent"]
+COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/certs /opt/certs/
+RUN chown -R 1001:1001 /joval && chown -R 1001:1001 /opt
+USER 1001
+WORKDIR /joval
+CMD ["/opt/vscan-agent"]

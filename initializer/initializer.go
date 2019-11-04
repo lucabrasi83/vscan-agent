@@ -32,7 +32,7 @@ func Initialize() {
 func printBanner() {
 
 	fmt.Printf("\n")
-	banner, err := os.Open("banner.txt")
+	banner, err := os.Open("/opt/banner.txt")
 	if err != nil {
 		logging.VSCANLog("error", "Not able to load banner: %v", err.Error())
 	}

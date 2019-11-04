@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/lucabrasi83/vscan-agent/inibuilder"
@@ -58,7 +57,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 		)
 	}
 
-	err := inibuilder.BuildIni(
+	configBuf, err := inibuilder.BuildIni(
 		req.GetJobId(),
 		req.GetDevices(),
 		req.GetOvalSourceUrl(),
@@ -73,7 +72,7 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 		)
 	}
 
-	scanLogs, err := execScan(jobID, scanTimeout, stream)
+	scanLogs, err := execScan(jobID, scanTimeout, stream, configBuf)
 
 	if err != nil {
 		return status.Errorf(
@@ -139,12 +138,12 @@ func (*AgentServer) BuildScanConfig(req *agentpb.ScanRequest, stream agentpb.Vsc
 
 	return status.Errorf(
 		codes.Internal,
-		fmt.Sprintf("agent %v - error while executing scan for job ID %v . Directory %v not found", hostname, jobID,
+		fmt.Sprintf("agent %v - error while executing scan for job ID %v . Directory %v not found ", hostname, jobID,
 			reportDir),
 	)
 }
 
-func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanConfigServer) (*agentpb.
+func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanConfigServer, config io.Reader) (*agentpb.
 	ScanLogFileResponsePS, error) {
 
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(t)*time.Second)
@@ -152,29 +151,11 @@ func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanCon
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxTimeout, "java",
-		"-Dlicense.file=joval/tatacommunications.com.sig.xml",
-		"-jar", "joval/Joval-Utilities.jar", "scan", "-c", "scanjobs/"+job+"/config.ini",
+		"-Dlicense.file=tatacommunications.com.sig.xml",
+		"-jar", "Joval-Utilities.jar", "scan", "-c", "-",
 	)
 
-	// Build File Path using join for efficiency
-	filePath := strings.Join([]string{".", "scanjobs", job, jovalStdOutLogFile}, "/")
-
-	logFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0755)
-
-	if err != nil {
-		logging.VSCANLog("error",
-			"failed to create Joval log file for job ID %v with error %v", job, err)
-	}
-
-	defer func() {
-
-		errFileClose := logFile.Close()
-
-		if errFileClose != nil {
-			logging.VSCANLog("error",
-				"failed to close Joval log file for job ID %v with error %v", job, errFileClose)
-		}
-	}()
+	cmd.Stdin = config
 
 	// Copy Joval scan log output to logFile real-time
 	// bufStream will be sent to the gRPC stream as the log lines from Joval are generated
@@ -184,7 +165,7 @@ func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanCon
 	bufPersist := new(bytes.Buffer)
 
 	// Multiwriter will write the logs in file and buffers
-	stderr := io.MultiWriter(logFile, bufStream, bufPersist)
+	stderr := io.MultiWriter(bufStream, bufPersist)
 
 	// Map the command Standard Error Output to the multiwriter
 	cmd.Stderr = stderr
@@ -212,7 +193,7 @@ func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanCon
 		}
 
 	}()
-	err = cmd.Run()
+	err := cmd.Run()
 
 	done <- true
 
