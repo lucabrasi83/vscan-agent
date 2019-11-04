@@ -14,9 +14,9 @@ FROM openjdk:13-slim
 LABEL maintainer="sebastien.pouplin@tatacommunications.com"
 COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/banner.txt /opt/banner.txt
 COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/vscan-agent /opt/vscan-agent
-COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/joval /joval
+COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/joval /opt/joval
 COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/certs /opt/certs/
-RUN chown -R 1001:1001 /joval && chown -R 1001:1001 /opt
+RUN chown -R 1001:1001 /opt
 USER 1001
-WORKDIR /joval
+WORKDIR /opt/joval
 CMD ["/opt/vscan-agent"]

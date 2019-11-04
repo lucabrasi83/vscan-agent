@@ -9,7 +9,6 @@ import (
 func main() {
 
 	initializer.Initialize()
-
 	scanagent.StartServer()
 
 }

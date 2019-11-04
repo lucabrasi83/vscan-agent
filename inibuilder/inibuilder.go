@@ -47,7 +47,7 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 		input.type = xccdf_results
 		output.extension = json 
 		transform.file =` + filepath.FromSlash(
-				"./tools/arf_xccdf_results_to_json_events.xsl")))
+				"/opt/joval/tools/arf_xccdf_results_to_json_events.xsl")))
 
 	if err != nil {
 		return nil, fmt.Errorf("error while loading default ini content for job ID %v: %v", jobID, err)
@@ -86,7 +86,7 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 			XccdfVersion: 0,
 		},
 		Logs{
-			ExportDir:       filepath.FromSlash("./scanjobs/" + jobID + "/logs"),
+			ExportDir:       filepath.FromSlash("/opt/joval/scanjobs/" + jobID + "/logs"),
 			Level:           "off",
 			OutputExtension: ".log",
 		},
@@ -102,7 +102,7 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 	}
 
 	// Assigns directory name per scan job ID
-	dir := filepath.FromSlash("./scanjobs/" + jobID)
+	dir := filepath.FromSlash("/opt/joval/scanjobs/" + jobID)
 
 	// Check whether the directory to be created already exists. If not, we create it with Unix permission 0750
 	if _, errDirNotExist := os.Stat(dir); os.IsNotExist(errDirNotExist) {
@@ -112,13 +112,13 @@ func BuildIni(jobID string, dev []*agentpb.Device, jovalSource string, sshGW *ag
 	}
 
 	configBuf := &bytes.Buffer{}
+	configBuf.Grow(512)
+
 	_, errBuf := cfg.WriteTo(configBuf)
 	if errBuf != nil {
 		return nil, errBuf
 	}
 	configBuf.WriteString("#EOF")
-
-	logging.VSCANLog("warning", "%v", configBuf.Cap())
 
 	return configBuf, nil
 }
@@ -243,7 +243,7 @@ func buildDeviceCredentialsSections(cfg *ini.File, creds *agentpb.UserDeviceCred
 func dynaIniGen(cfg *ini.File, jobID string, dev []*agentpb.Device, sshGWName string, credsName string) error {
 
 	_, err := cfg.Section(
-		"Report: JSON").NewKey("export.dir", filepath.FromSlash("./scanjobs/"+jobID+"/reports"))
+		"Report: JSON").NewKey("export.dir", filepath.FromSlash("/opt/joval/scanjobs/"+jobID+"/reports"))
 
 	if err != nil {
 		return fmt.Errorf("error while setting reports directory in config.ini: %v ", err)
