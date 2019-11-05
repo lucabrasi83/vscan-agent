@@ -23,7 +23,7 @@ require (
 	golang.org/x/sys v0.0.0-20190927073244-c990c680b611 // indirect
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
 	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c // indirect
-	google.golang.org/grpc v1.24.0
+	google.golang.org/grpc v1.25.0
 	gopkg.in/ini.v1 v1.42.0 // indirect
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 )
