@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     -X github.com/lucabrasi83/vscan-agent/initializer.BuiltOn=$(hostname)" -o vscan-agent
 
 
-FROM openjdk:13-slim
+FROM openjdk:11-jre-slim
 LABEL maintainer="sebastien.pouplin@tatacommunications.com"
 COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/banner.txt /opt/banner.txt
 COPY --from=builder /go/src/github.com/lucabrasi83/vscan-agent/vscan-agent /opt/vscan-agent
