@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/StackExchange/wmi v0.0.0-20181212234831-e0a55b97c705 // indirect
 	github.com/fatih/color v1.7.0
-	github.com/go-ini/ini v1.49.0
+	github.com/go-ini/ini v1.51.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
