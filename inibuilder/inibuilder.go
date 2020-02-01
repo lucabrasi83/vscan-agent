@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/go-ini/ini"
-	"github.com/lucabrasi83/vscan-agent/logging"
 	agentpb "github.com/lucabrasi83/vscan-agent/proto"
 )
 
@@ -160,8 +159,6 @@ func buildSSHGatewaySections(cfg *ini.File, sshGW *agentpb.SSHGateway) error {
 		if err != nil {
 			return fmt.Errorf("error while setting SSH gateway private key in config.ini: %v ", err)
 		}
-
-		logging.VSCANLog("warning", "%v", pvKeyJovalFormat)
 
 	}
 
