@@ -200,7 +200,7 @@ func execScan(job string, t int64, stream agentpb.VscanAgentService_BuildScanCon
 					if errStream != nil {
 						logging.VSCANLog("error", "Failed to read log stream for job ID %v with error %v", job, errStream)
 					}
-					logging.VSCANLog("warning", string(scanner.Bytes()))
+
 					<-bufTicket.C
 
 				}
