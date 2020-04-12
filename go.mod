@@ -19,7 +19,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/shirou/gopsutil v2.19.10+incompatible
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.5.0
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
