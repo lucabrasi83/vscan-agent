@@ -28,7 +28,7 @@ require (
 	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/genproto v0.0.0-20200410110633-0848e9f44c36 // indirect
-	google.golang.org/grpc v1.28.1
+	google.golang.org/grpc v1.29.1
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/ini.v1 v1.42.0 // indirect
 )
