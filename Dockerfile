@@ -1,4 +1,4 @@
-FROM golang:1.14.2-alpine as builder
+FROM golang:1.14.6-alpine as builder
 RUN apk add --no-cache build-base git ca-certificates && update-ca-certificates 2>/dev/null || true
 COPY . /go/src/github.com/lucabrasi83/vscan-agent
 WORKDIR /go/src/github.com/lucabrasi83/vscan-agent
